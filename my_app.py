@@ -15,15 +15,16 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://bit.ly/naufal-git',
         'Report a bug': "https://bit.ly/naufal-linkedin",
-        'About': "This webapp is made as part of Hacktiv8 Full Time Data Science program. Specifically, it is created to fulfill the Milestones 1 project in the phase 0 of the program",
+        'About': """This webapp is made as one of the assignments in Hacktiv8 Full Time Data Science program. 
+        It is created to fulfill the Milestones 1 project in the phase 0 of the program.""",
     }
 )
 
-st.title('Myanmar Supermarket Dashboard')
+st.title('Myanmar Supermarket Info Page')
 st.image('header.jpg')
 
 
-@st.cache 
+@st.cache_data
 def load_data():
     data = pd.read_csv('supermarket_sales_cleaned.csv')
     return data
@@ -43,10 +44,10 @@ if pages == 'Homepage':       ############################## Homepage ##########
     with st.expander("Show dataset"):
         st.write(df.head())
     with st.expander("See explanation"):
-        st.write('The dataset is one of the historical sales of supermarket company which has recorded in 3 different branches for 3 months data.')
-        st.write('The columns are self-explanatory except maybe some.')
-        st.write('Cogs is calculated from Quantity x Unit price, and Total is from cogs + Tax 5%')
-    st.subheader('Zero missing value detected in the dataset.')
+        st.write('The dataset is a historical sales data of a supermarket company in Myanmar. The data was recorded in 3 different branches for 3 months.')
+        st.write('The columns are self-explanatory.')
+        st.write('\'cogs\' is calculated from Quantity x Unit price, and \'Total\' is from cogs + Tax 5%')
+    st.subheader('The dataset has no missing value.')
     with st.expander("See info table"):
         st.text(s)
 
@@ -58,11 +59,11 @@ elif pages == 'Hypothesis Testing':   ### Hypothesis Testing page
         st.subheader('Hypothesis Testing #1')
         st.write(df.groupby('Gender')['Rating'].mean())
         st.text('''         Table above shows the average rating given by male and female customers to the 
-        supermarket company. From here, one can have the idea to question whether male 
+        supermarket. From here, one can have the idea to question whether male 
         customers give better rating than female customers, or vice versa.''')
         st.text(''' Hypothesis statement:
-                    * H0 : μFemaleRating = μMaleRating
-                    * H1 : μFemaleRating != μMaleRating
+                    * H0: μFemaleRating = μMaleRating
+                    * H1: μFemaleRating != μMaleRating
         ''')
         st.text('Hypothesis testing using 2 tailed t-test for 2 samples:')
         female = df[(df['Gender']=='Female')]
@@ -92,7 +93,7 @@ elif pages == 'Hypothesis Testing':   ### Hypothesis Testing page
         plt.legend()
         print(ci[0])
         st.pyplot(fig)
-        st.text('''         P-value is above the \u03B1 (0.5). 
+        st.text('''         P-value is above the \u03B1 (0.05). 
         Black dashed-line (the alternative hypothesis) is located inside of the confidence 
         interval. 
         We fail to reject H0 (μFemaleRating = μMaleRating). 
@@ -106,7 +107,7 @@ elif pages == 'Hypothesis Testing':   ### Hypothesis Testing page
         st.subheader('Hypothesis Testing #2')
         st.write(df.groupby('City')['gross income'].mean())
         st.text('''         Above table shows the average gross income of each city. Given this information, 
-        one can have question which city has higher gross income than the other cities. 
+        one can question which city has highest gross income. 
         Or did every city generate the same gross income?''')
         st.text(''' Hypothesis statement:
                 * H0 : μMandalay = μNaypyitaw = μYangon
