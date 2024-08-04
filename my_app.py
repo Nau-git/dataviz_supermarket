@@ -6,6 +6,8 @@ import seaborn as sns
 import scipy.stats as stats
 import io
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 st.set_page_config(
     page_title="Myanmar Supermarket Dashboard",
@@ -27,6 +29,7 @@ st.image('header.jpg')
 @st.cache_data
 def load_data():
     data = pd.read_csv('supermarket_sales_cleaned.csv')
+    data['Date'] = pd.to_datetime(data['Date'])
     return data
 df=load_data()
 buffer = io.StringIO()
@@ -102,7 +105,7 @@ elif pages == 'Hypothesis Testing':   ### Hypothesis Testing page
         ''')
     ###################### end of hypothesis testing 1 #####################
 
-    ####################################### Hypothesis testing 1 #######################################
+    ####################################### Hypothesis testing 2 #######################################
     with st.expander("Hypothesis Testing #2"):
         st.subheader('Hypothesis Testing #2')
         st.write(df.groupby('City')['gross income'].mean())
@@ -155,7 +158,15 @@ elif pages == 'Hypothesis Testing':   ### Hypothesis Testing page
         three cities.
         ''')
 
-
+    # New feature: Correlation Analysis
+    with st.expander("Correlation Analysis"):
+        st.subheader('Correlation Heatmap')
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        corr_matrix = df[numeric_cols].corr()
+        fig = px.imshow(corr_matrix, text_auto=True, aspect="auto")
+        fig.update_layout(title="Correlation Heatmap of Numeric Variables")
+        st.plotly_chart(fig)
+        st.write("This heatmap shows the correlation between numeric variables in the dataset.")
 
 else:   ##################################### Data Viz page ##########################
     st.header('Data Visualization Page')
@@ -214,27 +225,64 @@ else:   ##################################### Data Viz page ####################
             Another possibility is that the dataset contributor is purposely trying to make the dataset as easy to read as possible.             
         """)
 
-    ########### Chart #4 ###########
-    with st.expander('Stat in time series'):
-        st.subheader('Stat in time series')
-        select_col3 = st.selectbox('Select an attribute', options=('Quantity', 'Total', 'cogs', 'gross income', 'Rating'), index=0)
-        fig3 = px.bar(df, x='Date', y=select_col3, color='Branch', hover_data={"Date": "|%B %d, %Y"})
-        fig3.update_xaxes(rangeslider_visible=True)
-        st.plotly_chart(fig3)
-        st.write("A range slider located at the bottom is available to select a date range.")
-         
+    # Improved Chart #4: Time series with multiple metrics
+    with st.expander('Multi-metric Time Series'):
+        st.subheader('Multi-metric Time Series')
+        metrics = st.multiselect('Select metrics to display', 
+                                 options=['Quantity', 'Total', 'cogs', 'gross income', 'Rating'],
+                                 default=['Quantity', 'Total'])
         
-    ########### Chart #5 ###########
-    with st.expander('Stat per city with animation'):
-        st.subheader('Stat per city with animation')
-        select_col2 = st.selectbox('Select an attribute to see the stat per city', options=('Quantity', 'Total', 'cogs', 'gross income', 'Rating'), index=1)
-        fig2 = px.bar(df, x='City', y=select_col2, animation_frame='Date', color='Gender')
-        st.plotly_chart(fig2)
-    
-    
-    
-    
-    
+        fig = make_subplots(rows=len(metrics), cols=1, shared_xaxes=True, 
+                            vertical_spacing=0.05, subplot_titles=metrics)
+        
+        for i, metric in enumerate(metrics, 1):
+            for branch in df['Branch'].unique():
+                branch_data = df[df['Branch'] == branch]
+                fig.add_trace(
+                    go.Scatter(x=branch_data['Date'], y=branch_data[metric], 
+                               mode='lines', name=f'{branch} - {metric}'),
+                    row=i, col=1
+                )
+        
+        fig.update_layout(height=300*len(metrics), title_text="Time Series of Multiple Metrics by Branch")
+        fig.update_xaxes(rangeslider_visible=True, row=len(metrics), col=1)
+        st.plotly_chart(fig)
+        st.write("Use the range slider at the bottom to zoom in on specific date ranges.")
 
-    
-    
+    # New feature: Customer Segment Analysis
+    with st.expander('Customer Segment Analysis'):
+        st.subheader('Customer Segment Analysis')
+        segment = st.selectbox('Select a customer segment', 
+                               options=['Gender', 'Customer type', 'Branch'])
+        metric = st.selectbox('Select a metric', 
+                              options=['Total', 'Quantity', 'Rating'])
+        
+        fig = px.box(df, x=segment, y=metric, color=segment)
+        fig.update_layout(title=f'{metric} Distribution by {segment}')
+        st.plotly_chart(fig)
+        st.write(f"This box plot shows the distribution of {metric} across different {segment} categories.")
+
+    # New feature: Product Performance Dashboard
+    with st.expander('Product Performance Dashboard'):
+        st.subheader('Product Performance Dashboard')
+        product_line = st.selectbox('Select a product line', 
+                                    options=df['Product line'].unique())
+        
+        filtered_df = df[df['Product line'] == product_line]
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig1 = px.pie(filtered_df, values='Quantity', names='Branch', 
+                          title=f'Quantity Sold by Branch for {product_line}')
+            st.plotly_chart(fig1)
+        
+        with col2:
+            fig2 = px.bar(filtered_df, x='Branch', y='Total', 
+                          title=f'Total Sales by Branch for {product_line}')
+            st.plotly_chart(fig2)
+        
+        fig3 = px.scatter(filtered_df, x='Unit price', y='Quantity', 
+                          color='Branch', size='Rating', hover_data=['Total'],
+                          title=f'Price vs Quantity for {product_line}')
+        st.plotly_chart(fig3)
